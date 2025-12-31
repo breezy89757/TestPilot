@@ -4,6 +4,8 @@
 
 It allows developers to run automated browser tests and receive intelligent, visual-based analysis of the UI, going beyond simple assertion checks.
 
+![TestPilot Demo](wwwroot/assets/images/demo-screenshot.png)
+
 ## ✨ Features
 
 - **Web Testing Engine**: Built on Playwright for .NET, supporting Chromium, Firefox, and WebKit.
@@ -28,7 +30,7 @@ It allows developers to run automated browser tests and receive intelligent, vis
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/TestPilot.git
+   git clone https://github.com/breezy89757/TestPilot.git
    cd TestPilot
    ```
 
