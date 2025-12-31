@@ -1,0 +1,171 @@
+﻿@page "/"
+@using TestPilot.Services
+@inject IPlaywrightService PlaywrightService
+@inject AiAnalysisService AiAnalysisService
+
+<PageTitle>Test Runner | TestPilot</PageTitle>
+
+<div class="runner-container">
+    <div class="runner-header">
+        <h1>🚀 Test Runner <span class="badge-ai">Powered by GPT-5</span></h1>
+        <div class="actions">
+            <button class="btn btn-primary" @onclick="RunTest" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Running...</span>
+                }
+                else
+                {
+                    <span class="icon">▶️</span> <span>Run Test</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    <div class="runner-content">
+        <div class="test-config">
+            <div class="form-group">
+                <label>Target URL</label>
+                <input type="text" class="form-control" @bind="targetUrl" placeholder="https://example.com" />
+            </div>
+            
+            <div class="form-group">
+                <label>Browser Engine</label>
+                <select class="form-select" @bind="selectedBrowser">
+                    <option value="chromium">Chromium</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="webkit">WebKit</option>
+                </select>
+            </div>
+            
+
+        </div>
+
+        <div class="test-output">
+            <h3>Execution Result</h3>
+            <div class="result-viewer">
+                @if (!string.IsNullOrEmpty(screenshotBase64))
+                {
+                    <div class="screenshot-container">
+                        <img src="data:image/png;base64,@screenshotBase64" class="screenshot-img" alt="Test Screenshot" />
+                        <div class="status-badge success">
+                            <span>✅ Screenshot captured successfully</span>
+                        </div>
+                        
+                        <div class="ai-actions mt-3 w-100">
+                            <button class="btn-ai" @onclick="AnalyzeWithAi" disabled="@isAnalyzing">
+                                @if (isAnalyzing)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span>Analyzing...</span>
+                                }
+                                else
+                                {
+                                    <span class="icon">🧠</span> <span>Analyze with GPT-5</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                }
+                else if (isLoading)
+                {
+                     <div class="placeholder-box">
+                         <div class="spinner-border text-primary" role="status"></div>
+                         <span>Running Playwright test...</span>
+                     </div>
+                }
+                else
+                {
+                    <div class="placeholder-box">
+                        <span class="placeholder-icon">🖥️</span>
+                        <span>Ready to launch browser</span>
+                    </div>
+                }
+            </div>
+            
+            <!-- AI Analysis Result -->
+            @if (isAnalyzing)
+            {
+               <div class="ai-analysis-box analyzing">
+                   <div class="typing-indicator">
+                       <span></span><span></span><span></span>
+                   </div>
+                   <div class="analyzing-text">GPT-5 is looking at your screenshot...</div>
+               </div>
+            }
+            else if (!string.IsNullOrEmpty(aiAnalysisResult))
+            {
+                <div class="ai-analysis-box done">
+                    <h4>🤖 AI Analysis Result</h4>
+                    <div class="analysis-content">
+                        @aiAnalysisResult
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    @errorMessage
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    private string targetUrl = "https://example.com";
+    private string selectedBrowser = "chromium";
+    private string? screenshotBase64;
+    private bool isLoading = false;
+    private bool isAnalyzing = false;
+    private string? aiAnalysisResult;
+    private string? errorMessage;
+
+    private async Task RunTest()
+    {
+        isLoading = true;
+        errorMessage = null;
+        screenshotBase64 = null;
+        aiAnalysisResult = null;
+        
+        try
+        {
+            screenshotBase64 = await PlaywrightService.RunTestAsync(targetUrl, selectedBrowser);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task AnalyzeWithAi()
+    {
+        if (string.IsNullOrEmpty(screenshotBase64)) return;
+        
+        isAnalyzing = true;
+        errorMessage = null;
+        StateHasChanged(); 
+        
+        try
+        {
+            aiAnalysisResult = await AiAnalysisService.AnalyzeScreenshotAsync(screenshotBase64);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"AI Analysis Error: {ex.Message}";
+        }
+        finally
+        {
+            isAnalyzing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}
